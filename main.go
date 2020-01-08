@@ -3,18 +3,28 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"text/template"
 
 	"github.com/gorilla/mux"
 )
 
+var (
+	homeTemplate    *template.Template
+	contactTemplate *template.Template
+)
+
 func home(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(w, "<h1>homepage Endpoint Hit!</h1>")
+	if err := homeTemplate.Execute(w, nil); err != nil {
+		panic(err)
+	}
 }
 
 func contact(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(w, "for help contact the support team: <a href=\"mailto:support@lenslocked.com\">support@lenslocked.com</a>")
+	if err := contactTemplate.Execute(w, nil); err != nil {
+		panic(err)
+	}
 }
 
 func notFound(w http.ResponseWriter, r *http.Request) {
@@ -24,6 +34,15 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRequests() {
+	var err error
+	homeTemplate, err = template.ParseFiles("views/home.gohtml")
+	if err != nil {
+		panic(err)
+	}
+	contactTemplate, err = template.ParseFiles("views/contact.gohtml")
+	if err != nil {
+		panic(err)
+	}
 	router := mux.NewRouter()
 	router.NotFoundHandler = http.HandlerFunc(notFound)
 	router.HandleFunc("/", home)
