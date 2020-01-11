@@ -11,6 +11,8 @@ import (
 var (
 	homeView    *views.View
 	contactView *views.View
+	faqView     *views.View
+	signupView  *views.View
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -23,6 +25,15 @@ func contact(w http.ResponseWriter, r *http.Request) {
 	must(contactView.Render(w, nil))
 }
 
+func faq(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	must(faqView.Render(w, nil))
+}
+func signup(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	must(signupView.Render(w, nil))
+}
+
 func notFound(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusNotFound)
@@ -32,11 +43,15 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 func handleRequests() {
 	homeView = views.NewView("bootstrap", "views/home.gohtml")
 	contactView = views.NewView("bootstrap", "views/contact.gohtml")
+	faqView = views.NewView("bootstrap", "views/faq.gohtml")
+	signupView = views.NewView("bootstrap", "views/signup.gohtml")
 
 	router := mux.NewRouter()
 	router.NotFoundHandler = http.HandlerFunc(notFound)
 	router.HandleFunc("/", home)
 	router.HandleFunc("/contact", contact)
+	router.HandleFunc("/faq", faq)
+	router.HandleFunc("/signup", signup)
 	http.ListenAndServe(":3000", router)
 }
 
