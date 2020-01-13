@@ -45,10 +45,11 @@ func handleRequests() {
 
 	router := mux.NewRouter()
 	router.NotFoundHandler = http.HandlerFunc(notFound)
-	router.HandleFunc("/", home)
-	router.HandleFunc("/contact", contact)
-	router.HandleFunc("/faq", faq)
-	router.HandleFunc("/signup", usersC.New)
+	router.HandleFunc("/", home).Methods("GET")
+	router.HandleFunc("/contact", contact).Methods("GET")
+	router.HandleFunc("/faq", faq).Methods("GET")
+	router.HandleFunc("/signup", usersC.New).Methods("GET")
+	router.HandleFunc("/signup", usersC.Create).Methods("POST")
 	http.ListenAndServe(":3000", router)
 }
 
