@@ -13,12 +13,12 @@ func handleRequests() {
 	usersC := controllers.NewUsers()
 
 	router := mux.NewRouter()
-	router.NotFoundHandler = http.HandlerFunc(notFound)
-	router.Handle("/", staticC.HomeView).Methods("GET")
-	router.Handle("/contact", staticC.ContactView).Methods("GET")
+	// router.NotFoundHandler = http.HandlerFunc(notFound)
+	router.Handle("/", staticC.Home).Methods("GET")
+	router.Handle("/contact", staticC.Contact).Methods("GET")
 	router.HandleFunc("/signup", usersC.New).Methods("GET")
 	router.HandleFunc("/signup", usersC.Create).Methods("POST")
-	http.ListenAndServe(":3000", router)
+	http.ListenAndServe(":8080", router)
 }
 
 func main() {

@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"use-go/lenslocked.com/views"
@@ -12,7 +14,7 @@ import (
 // initial setup.
 func NewUsers() *Users {
 	return &Users{
-		NewView: views.NewView("bootstrap", "views/users/new.gohtml"),
+		NewView: views.NewView("bootstrap", "users/new"),
 	}
 }
 
@@ -21,8 +23,8 @@ type Users struct {
 }
 
 type SignupForm struct {
-	Email    string `json: "email"`
-	Password string `json: "password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 // New is used to render the form where a user can
@@ -44,4 +46,8 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 	if err := parseForm(r, &form); err != nil {
 		panic(err)
 	}
+	encoder := json.NewEncoder(w)
+	response := encoder.Encode(&form)
+	fmt.Println(response)
+	fmt.Fprintln(w, response)
 }
