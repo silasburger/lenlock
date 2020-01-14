@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 
+	"github.com/gorilla/schema"
 	"use-go/lenslocked.com/views"
 )
 
@@ -21,6 +21,11 @@ type Users struct {
 	NewView *views.View
 }
 
+type SignupForm struct {
+	Email    string `json: "email"`
+	Password string `json: "password"`
+}
+
 // New is used to render the form where a user can
 // create a new user account.
 //
@@ -36,10 +41,12 @@ func (u *Users) New(w http.ResponseWriter, r *http.Request) {
 //
 // POST /signup
 func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
+	err := r.ParseForm()
+	if err != nil {
 		panic(err)
 	}
 
-	fmt.Fprintln(w, r.PostForm["email"])
-	fmt.Fprintln(w, r.PostForm["password"])
+	var form SignupForm
+	decoder := schema.NewDecoder()
+	err = decoder.Decode(&form, r.PostForm)
 }
