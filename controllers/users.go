@@ -25,11 +25,6 @@ type SignupForm struct {
 	Password string `json: "password"`
 }
 
-type UpdateForm struct {
-	Email    string `json: "email"`
-	Password string `json: "password"`
-}
-
 // New is used to render the form where a user can
 // create a new user account.
 //
@@ -46,17 +41,6 @@ func (u *Users) New(w http.ResponseWriter, r *http.Request) {
 // POST /signup
 func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 	var form SignupForm
-	if err := parseForm(r, &form); err != nil {
-		panic(err)
-	}
-}
-
-// Update is used to process the update form when a user
-// submits it. This is used to update a user account.
-//
-// POST /signup
-func (u *Users) Update(w http.ResponseWriter, r *http.Request) {
-	var form UpdateForm
 	if err := parseForm(r, &form); err != nil {
 		panic(err)
 	}
