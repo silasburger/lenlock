@@ -47,7 +47,8 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	encoder := json.NewEncoder(w)
-	response := encoder.Encode(&form)
-	fmt.Println(response)
-	fmt.Fprintln(w, response)
+	if err := encoder.Encode(&form); err != nil {
+		panic(err)
+	}
+	fmt.Fprintln(w)
 }
