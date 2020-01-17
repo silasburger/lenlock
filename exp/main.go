@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	_ "database/sql"
 	"fmt"
 
 	_ "github.com/lib/pq"
@@ -21,6 +20,18 @@ func main() {
 		host, port, user, dbname)
 
 	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+
+	var id int
+	row := db.QueryRow(`
+		INSERT INTO users(name, email)
+		VALUES ($1, $2)
+		RETURNING id`,
+		"Jon Calhoun", "jon@calhoun.io")
+	err = row.Scan(&id)
+
 	if err != nil {
 		panic(err)
 	}
