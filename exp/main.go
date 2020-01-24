@@ -33,33 +33,28 @@ func main() {
 
 	defer db.Close()
 
-	type User struct {
-		Name  string
-		Email string
-		ID    int
-	}
-
-	var users []User
 	rows, err := db.Query(`
-		SELECT id, name, email
-		FROM users`)
+		SELECT users.id, users.email, users.name,
+		orders.id AS order_id,
+		orders.amount AS order_amount,
+		orders.description AS order_description
+		FROM users
+		INNER JOIN orders
+		ON users.id = orders.user_id`)
+
 	if err != nil {
 		panic(err)
 	}
 
-	defer rows.Close()
-
 	for rows.Next() {
-		var user User
-		err := rows.Scan(&user.ID, &user.Name, &user.Email)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				fmt.Println("no rows")
-			}
+		var userID, orderID, amount int
+		var email, name, desc string
+		if err := rows.Scan(&userID, &name, &email, &orderID, &amount, &desc); err != nil {
 			panic(err)
 		}
-		users = append(users, user)
+		fmt.Println(userID, name, email, orderID, amount, desc)
 	}
-
-	fmt.Println(users)
+	if err != nil {
+		panic(err)
+	}
 }
