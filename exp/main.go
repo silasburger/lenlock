@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/jinzhu/gorm"
 
@@ -20,9 +17,16 @@ const (
 
 type User struct {
 	gorm.Model
-	Name  string
-	Email string `gorm:"not null;unique_index"`
-	Color string
+	Name   string
+	Email  string `gorm:"not null;unique_index"`
+	Color  string
+	Orders []Order
+}
+type Order struct {
+	gorm.Model
+	UserID      uint
+	Amount      int
+	Description string
 }
 
 func main() {
@@ -35,36 +39,39 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
+	db.LogMode(true)
+	db.AutoMigrate(&User{}, &Order{})
 
-	err = db.DB().Ping()
+	var u User
+	if err := db.Preload("Orders").First(&u).Error; err != nil {
+		panic(err)
+	}
+
+	createOrder(db, u, 9999, "Fake Description#1")
+	createOrder(db, u, 100, "Fake Description#2")
+	createOrder(db, u, 1001, "Fake Description#3")
+
+	fmt.Println(u.Orders)
+
+	user := User{}
+	if err := db.Where("email = ?", "blah@gmail.com").First(&user).Error; err != nil {
+		switch err {
+		case gorm.ErrRecordNotFound:
+			fmt.Println("No user found!")
+		case gorm.ErrInvalidSQL:
+			fmt.Println("Invalid sql!!")
+		}
+	}
+
+}
+
+func createOrder(db *gorm.DB, user User, amount int, desc string) {
+	err := db.Create(&Order{
+		UserID:      user.ID,
+		Amount:      amount,
+		Description: desc,
+	}).Error
 	if err != nil {
 		panic(err)
 	}
-
-	db.LogMode(true)
-	db.AutoMigrate(&User{})
-	// db.DropTableIfExists(&User{})
-	name, email, color := getInfo()
-	u := User{
-		Name:  name,
-		Email: email,
-		Color: color,
-	}
-	if err = db.Create(&u).Error; err != nil {
-		panic(err)
-	}
-	fmt.Println("successfully connected to the db")
-}
-func getInfo() (name, email, color string) {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("What is your name?")
-	name, _ = reader.ReadString('\n')
-	fmt.Println("What is your email?")
-	email, _ = reader.ReadString('\n')
-	fmt.Println("What is your color?")
-	color, _ = reader.ReadString('\n')
-	name = strings.TrimSpace(name)
-	email = strings.TrimSpace(email)
-	color = strings.TrimSpace(color)
-	return name, email, color
 }
