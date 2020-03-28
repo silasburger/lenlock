@@ -22,6 +22,11 @@ func main() {
 	us, err := models.NewUserService(psqlInfo)
 	defer us.Close()
 	// us.DestructiveReset()
+	// user := models.User{
+	// 	Name:  "Micael Scott",
+	// 	Email: "michael@dundermilflen.com",
+	// }
+	// err = us.Create(&user)
 	user, err := us.ByID(1)
 	if err != nil {
 		panic(err)
