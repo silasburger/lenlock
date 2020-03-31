@@ -21,15 +21,21 @@ func main() {
 
 	us, err := models.NewUserService(psqlInfo)
 	defer us.Close()
-	// us.DestructiveReset()
-	// user := models.User{
-	// 	Name:  "Micael Scott",
-	// 	Email: "michael@dundermilflen.com",
-	// }
-	// err = us.Create(&user)
-	user, err := us.ByID(1)
+	us.DestructiveReset()
+	user := models.User{
+		Name:  "Micael Scott",
+		Email: "michael@dundermilflen.com",
+	}
+	if err := us.Create(&user); err != nil {
+		panic(err)
+	}
+	user.Email = "michaelscott@michaelscottpaper.com"
+	if err := us.Update(&user); err != nil {
+		panic(err)
+	}
+	userByID, err := us.ByID(user.ID)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(user)
+	fmt.Println(userByID)
 }

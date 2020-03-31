@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -11,18 +12,20 @@ var (
 	ErrNotFound = errors.New("models: resource not found")
 )
 
+// NewUserService creates a connection to our db and returns
+// a reference toUserService struct with the db connection
 func NewUserService(connectionInfo string) (*UserService, error) {
 	db, err := gorm.Open("postgres", connectionInfo)
 	if err != nil {
 		return nil, err
 	}
-	return &UserService{ 
-		db: db, 
+	return &UserService{
+		db: db,
 	}, nil
 }
 
 //UserService holds our db and methods to handle user table in db
-type UserService struct{
+type UserService struct {
 	db *gorm.DB
 }
 
@@ -35,7 +38,7 @@ func (us *UserService) ByID(id uint) (*User, error) {
 	var user User
 	err := us.db.Where("id = ?", id).First(&user).Error
 	switch err {
-	case nil: 
+	case nil:
 		return &user, nil
 	case gorm.ErrRecordNotFound:
 		return nil, ErrNotFound
@@ -46,10 +49,16 @@ func (us *UserService) ByID(id uint) (*User, error) {
 
 // Create will create the provided user
 // and backfill data like ID, CreatedAt, and
-// UpdatedAt fields 
+// UpdatedAt fields
 func (us *UserService) Create(user *User) error {
 	us.db.LogMode(true)
 	return us.db.Create(user).Error
+}
+
+// Update will update the provided user with all of the data
+// in the provided user object.
+func (us *UserService) Update(user *User) error {
+	return us.db.Save(user).Error
 }
 
 // Close will close the UserService database connection
