@@ -29,10 +29,13 @@ func main() {
 	if err := us.Create(&user); err != nil {
 		panic(err)
 	}
-	user.Email = "michaelscott@michaelscottpaper.com"
-	if err := us.Update(&user); err != nil {
+	if err := us.Delete(user.ID); err != nil {
 		panic(err)
 	}
+	// user.Email = "michaelscott@michaelscottpaper.com"
+	// if err := us.Update(&user); err != nil {
+	// 	panic(err)
+	// }
 	userByID, err := us.ByID(user.ID)
 	if err != nil {
 		panic(err)
