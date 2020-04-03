@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"use-go/lenslocked.com/models"
 	"use-go/lenslocked.com/views"
 )
 
@@ -12,17 +12,20 @@ import (
 // This function will panic if the templates are not
 // parsed correctly, and should only be used during
 // initial setup.
-func NewUsers() *Users {
+func NewUsers(us *models.UserService) *Users {
 	return &Users{
 		NewView: views.NewView("bootstrap", "users/new"),
+		us:      us,
 	}
 }
 
 type Users struct {
 	NewView *views.View
+	us      *models.UserService
 }
 
 type SignupForm struct {
+	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -46,9 +49,13 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 	if err := parseForm(r, &form); err != nil {
 		panic(err)
 	}
-	encoder := json.NewEncoder(w)
-	if err := encoder.Encode(&form); err != nil {
-		panic(err)
+	user := models.User{
+		Name:  form.Name,
+		Email: form.Email,
 	}
-	fmt.Fprintln(w)
+	if err := u.us.Create(&user); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintln(w, form)
 }

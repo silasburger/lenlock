@@ -1,16 +1,25 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"use-go/lenslocked.com/controllers"
+	"use-go/lenslocked.com/models"
 
 	"github.com/gorilla/mux"
 )
 
-func handleRequests() {
+const (
+	host   = "localhost"
+	port   = 5432
+	user   = "silas.burger"
+	dbname = "lenslocked"
+)
+
+func handleRequests(us *models.UserService) {
 	staticC := controllers.NewStatic()
-	usersC := controllers.NewUsers()
+	usersC := controllers.NewUsers(us)
 
 	router := mux.NewRouter()
 	// router.NotFoundHandler = http.HandlerFunc(notFound)
@@ -22,7 +31,15 @@ func handleRequests() {
 }
 
 func main() {
-	handleRequests()
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"dbname=%s sslmode=disable",
+		host, port, user, dbname)
+
+	us, err := models.NewUserService(psqlInfo)
+	must(err)
+	defer us.Close()
+	us.AutoMigrate()
+	handleRequests(us)
 }
 
 func must(err error) {
