@@ -36,6 +36,7 @@ func main() {
 		host, port, user, dbname)
 
 	us, err := models.NewUserService(psqlInfo)
+	us.DestructiveReset()
 	must(err)
 	defer us.Close()
 	us.AutoMigrate()
