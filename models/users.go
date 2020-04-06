@@ -57,6 +57,27 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 	return &user, err
 }
 
+//InAgeRange will look up users in a specific age range return a slice of users
+//1 - user, nil
+//2 - nil, ErrNotFound
+//3 - nil, otherError
+func (us *UserService) InAgeRange(min uint, max uint) (*[]User, error) {
+	var users []User
+	err := us.db.Where("age >= ? AND age <= ?", min, max).Find(&users).Error
+	return &users, err
+}
+
+//ByAge will look up a user by their age and return a user
+//1 - user, nil
+//2 - nil, ErrNotFound
+//3 - nil, otherError
+func (us *UserService) ByAge(age uint) (*User, error) {
+	var user User
+	db := us.db.Where("age = ?", age)
+	err := first(db, &user)
+	return &user, err
+}
+
 // first will query using the provided gorm.db and it will get
 // the first item returned and place it into dst. If
 // nothing is found in the query, it will return ErrNotFound

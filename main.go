@@ -36,10 +36,11 @@ func main() {
 		host, port, user, dbname)
 
 	us, err := models.NewUserService(psqlInfo)
-	us.DestructiveReset()
+	// us.DestructiveReset()
+	users, err := us.InAgeRange(10, 16)
+	fmt.Println(users)
 	must(err)
 	defer us.Close()
-	us.AutoMigrate()
 	handleRequests(us)
 }
 
