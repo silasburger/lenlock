@@ -25,8 +25,10 @@ func handleRequests(us *models.UserService) {
 	// router.NotFoundHandler = http.HandlerFunc(notFound)
 	router.Handle("/", staticC.Home).Methods("GET")
 	router.Handle("/contact", staticC.Contact).Methods("GET")
-	router.HandleFunc("/signup", usersC.New).Methods("GET")
+	router.Handle("/signup", usersC.NewView).Methods("GET")
 	router.HandleFunc("/signup", usersC.Create).Methods("POST")
+	router.Handle("/login", usersC.LoginView).Methods("GET")
+	router.HandleFunc("/login", usersC.Login).Methods("POST")
 	http.ListenAndServe(":8080", router)
 }
 
@@ -37,8 +39,6 @@ func main() {
 
 	us, err := models.NewUserService(psqlInfo)
 	// us.DestructiveReset()
-	users, err := us.InAgeRange(10, 16)
-	fmt.Println(users)
 	must(err)
 	defer us.Close()
 	handleRequests(us)

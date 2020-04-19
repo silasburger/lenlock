@@ -5,7 +5,10 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"golang.org/x/crypto/bcrypt"
 )
+
+var userPwPepper = "secret-random-string"
 
 var (
 	// ErrNotFound is returned when a resource is not
@@ -15,6 +18,10 @@ var (
 	// ErrInvalidID is returned when an invalid ID is
 	// provided to a method like delete
 	ErrInvalidID = errors.New("models: ID provided was invalid")
+
+	// ErrInvalidPassword is return when a user cannot be
+	// authenticated due to mismatched passwords
+	ErrInvalidPassword = errors.New("models: incorrect password provided")
 )
 
 // NewUserService creates a connection to our db and returns
@@ -39,7 +46,6 @@ type UserService struct {
 //2 - nil, ErrNotFound
 //3 - nil, otherError
 func (us *UserService) ByID(id uint) (*User, error) {
-	us.db.LogMode(true)
 	var user User
 	db := us.db.Where("id = ?", id).First(&user)
 	err := first(db, &user)
@@ -57,11 +63,30 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 	return &user, err
 }
 
+// Authenticate will authenticate a user with the
+// provided email and password
+func (us *UserService) Authenticate(email, password string) (*User, error) {
+	foundUser, err := us.ByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
+	if err != nil {
+		switch err {
+		case bcrypt.ErrMismatchedHashAndPassword:
+			return nil, ErrInvalidPassword
+		default:
+			return nil, err
+		}
+	}
+	return foundUser, nil
+}
+
 //InAgeRange will look up users in a specific age range return a slice of users
 //1 - user, nil
 //2 - nil, ErrNotFound
 //3 - nil, otherError
-func (us *UserService) InAgeRange(min uint, max uint) (*[]User, error) {
+func (us *UserService) InAgeRange(min, max uint) (*[]User, error) {
 	var users []User
 	err := us.db.Where("age >= ? AND age <= ?", min, max).Find(&users).Error
 	return &users, err
@@ -93,7 +118,13 @@ func first(db *gorm.DB, dst interface{}) error {
 // and backfill data like ID, CreatedAt, and
 // UpdatedAt fields
 func (us *UserService) Create(user *User) error {
-	us.db.LogMode(true)
+	pwBytes := []byte(user.Password + userPwPepper)
+	hashedBytes, err := bcrypt.GenerateFromPassword(pwBytes, bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.Password = ""
+	user.PasswordHash = string(hashedBytes)
 	return us.db.Create(user).Error
 }
 
@@ -132,7 +163,9 @@ func (us *UserService) AutoMigrate() error {
 
 type User struct {
 	gorm.Model
-	Name  string
-	Email string `gorm:"not null;unique_index"`
-	Age   uint
+	Name         string
+	Email        string `gorm:"not null;unique_index"`
+	Password     string `gorm:"-"`
+	PasswordHash string `gorm:"not null"`
+	Age          uint
 }

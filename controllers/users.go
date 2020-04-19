@@ -14,14 +14,16 @@ import (
 // initial setup.
 func NewUsers(us *models.UserService) *Users {
 	return &Users{
-		NewView: views.NewView("bootstrap", "users/new"),
-		us:      us,
+		NewView:   views.NewView("bootstrap", "users/new"),
+		LoginView: views.NewView("bootstrap", "users/login"),
+		us:        us,
 	}
 }
 
 type Users struct {
-	NewView *views.View
-	us      *models.UserService
+	NewView   *views.View
+	LoginView *views.View
+	us        *models.UserService
 }
 
 type SignupForm struct {
@@ -31,18 +33,13 @@ type SignupForm struct {
 	Password string `json:"password"`
 }
 
-// New is used to render the form where a user can
-// create a new user account.
-//
-//GET /signup
-func (u *Users) New(w http.ResponseWriter, r *http.Request) {
-	if err := u.NewView.Render(w, nil); err != nil {
-		panic(err)
-	}
+type LoginForm struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 // Create is used to process the signup form when a user
-// submitw it. This is used to create a new user account.
+// submits it. This is used to create a new user account.
 //
 // POST /signup
 func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
@@ -51,13 +48,36 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	user := models.User{
-		Name:  form.Name,
-		Email: form.Email,
-		Age:   form.Age,
+		Name:     form.Name,
+		Email:    form.Email,
+		Age:      form.Age,
+		Password: form.Password,
 	}
 	if err := u.us.Create(&user); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintln(w, form)
+	fmt.Fprintln(w, &user)
+}
+
+// Login is used to process the login form when a
+// user submits it. This is used to authenticate a user.
+//
+// POST /login
+func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
+	var form LoginForm
+	if err := parseForm(r, &form); err != nil {
+		panic(err)
+	}
+	user, err := u.us.Authenticate(form.Email, form.Password)
+	switch err {
+	case models.ErrNotFound:
+		fmt.Fprintln(w, "Invalid email address")
+	case models.ErrInvalidPassword:
+		fmt.Fprintln(w, "Invalid password provided")
+	case nil:
+		fmt.Fprintln(w, user)
+	default:
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
