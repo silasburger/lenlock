@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	_ "github.com/lib/pq"
-	"use-go/lenslocked.com/models"
+	"use-go/lenslocked.com/hash"
 )
 
 const (
@@ -15,30 +15,8 @@ const (
 )
 
 func main() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"dbname=%s sslmode=disable",
-		host, port, user, dbname)
-
-	us, err := models.NewUserService(psqlInfo)
-	defer us.Close()
-	us.DestructiveReset()
-	user := models.User{
-		Name:  "Micael Scott",
-		Email: "michael@dundermilflen.com",
-	}
-	if err := us.Create(&user); err != nil {
-		panic(err)
-	}
-	if err := us.Delete(user.ID); err != nil {
-		panic(err)
-	}
-	// user.Email = "michaelscott@michaelscottpaper.com"
-	// if err := us.Update(&user); err != nil {
-	// 	panic(err)
-	// }
-	userByID, err := us.ByID(user.ID)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(userByID)
+	hmac := hash.NewHMAC("my-secret-key")
+	// This should print out:
+	//   4waUFc1cnuxoM2oUOJfpGZLGP1asj35y7teuweSFgPY=
+	fmt.Println(hmac.Hash("this is my string to hash"))
 }
