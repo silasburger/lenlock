@@ -6,9 +6,12 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"golang.org/x/crypto/bcrypt"
+	"use-go/lenslocked.com/hash"
+	"use-go/lenslocked.com/rand"
 )
 
-var userPwPepper = "secret-random-string"
+const userPwPepper = "secret-random-string"
+const hmacSecretKey = "secret-hmac-ket"
 
 var (
 	// ErrNotFound is returned when a resource is not
@@ -28,17 +31,20 @@ var (
 // a reference toUserService struct with the db connection
 func NewUserService(connectionInfo string) (*UserService, error) {
 	db, err := gorm.Open("postgres", connectionInfo)
+	hmac := hash.NewHMAC(hmacSecretKey)
 	if err != nil {
 		return nil, err
 	}
 	return &UserService{
-		db: db,
+		db:   db,
+		hmac: hmac,
 	}, nil
 }
 
 //UserService holds our db and methods to handle user table in db
 type UserService struct {
-	db *gorm.DB
+	db   *gorm.DB
+	hmac hash.HMAC
 }
 
 //ByID will look up by the id provided
@@ -61,6 +67,20 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 	db := us.db.Where("email = ?", email)
 	err := first(db, &user)
 	return &user, err
+}
+
+// ByRemember will look up a user by their remember token
+// and returns that user.This method will handle hashing
+// the token for us.
+// Errors are the same as ByEmail
+func (us *UserService) ByRemember(token string) (*User, error) {
+	var user User
+	hashedToken := us.hmac.Hash(token)
+	err := first(us.db.Where("remember_hash = ?", hashedToken), &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 // Authenticate will authenticate a user with the
@@ -123,14 +143,26 @@ func (us *UserService) Create(user *User) error {
 	if err != nil {
 		return err
 	}
-	user.Password = ""
 	user.PasswordHash = string(hashedBytes)
+	user.Password = ""
+
+	if user.Remember == "" {
+		token, err := rand.RememberToken()
+		if err != nil {
+			return err
+		}
+		user.Remember = token
+	}
+	user.RememberHash = us.hmac.Hash(user.Remember)
 	return us.db.Create(user).Error
 }
 
 // Update will update the provided user with all of the data
 // in the provided user object.
 func (us *UserService) Update(user *User) error {
+	if user.Remember != "" {
+		user.RememberHash = us.hmac.Hash(user.Remember)
+	}
 	return us.db.Save(user).Error
 }
 
@@ -156,6 +188,11 @@ func (us *UserService) DestructiveReset() error {
 	return us.AutoMigrate()
 }
 
+//SetLogging allows me to turn logging on or off
+func (us *UserService) SetLogging(isLogging bool) {
+	us.db.LogMode(isLogging)
+}
+
 // AutoMigrate will attemp to automatically migrate the users table
 func (us *UserService) AutoMigrate() error {
 	return us.db.AutoMigrate(&User{}).Error
@@ -168,4 +205,6 @@ type User struct {
 	Password     string `gorm:"-"`
 	PasswordHash string `gorm:"not null"`
 	Age          uint
+	Remember     string `gorm:"-"`
+	RememberHash string `gorm:"not null;unique_index"`
 }
