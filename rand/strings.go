@@ -3,7 +3,6 @@ package rand
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 )
 
 const RememberTokenBytes = 32
