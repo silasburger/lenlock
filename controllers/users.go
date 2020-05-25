@@ -120,16 +120,26 @@ func (u *Users) signIn(w http.ResponseWriter, user *models.User) error {
 	return nil
 }
 
+func setLoginReturnPath(w http.ResponseWriter, r *http.Request) {
+	cookie := http.Cookie{
+		Name:     "login_return_path",
+		Value:    r.URL.Path,
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &cookie)
+}
+
 // CookieTest retrieves the value of a cookie
 func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("remember_token")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		setLoginReturnPath(w, r)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 	user, err := u.us.ByRemember(cookie.Value)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 	fmt.Fprintln(w, user)
