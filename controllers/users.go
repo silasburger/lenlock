@@ -124,6 +124,10 @@ func (u *Users) signIn(w http.ResponseWriter, user *models.User) error {
 func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("remember_token")
 	if err != nil {
+		if err == http.ErrNoCookie {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
